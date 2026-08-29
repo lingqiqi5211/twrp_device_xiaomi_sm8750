@@ -19,11 +19,29 @@ on early-boot
     write /sys/kernel/icnss/wpss_boot 1
     write /proc/sys/kernel/firmware_config/force_sysfs_fallback 1
 
-on property:twrp.firmware.mounted=true
+# One image serves the whole family, and the family has two WLAN chips: kiwi
+# (warsaw) and peach (the rest). variant-script reads the chip off the cnss
+# device-tree node and names it in ro.twrp.wlan_chip, so each branch below
+# fires only on the device that has that chip. The cnss chain itself
+# (cnss_prealloc .. cfg80211) is in TW_LOAD_VENDOR_MODULES and is up by the
+# time twrp.firmware.mounted is set.
+on property:twrp.firmware.mounted=true && property:ro.twrp.wlan_chip=peach_v2
     chmod 0222 /sys/devices/platform/soc/b0000000.qcom,cnss-peach/fs_ready
     write /sys/devices/platform/soc/b0000000.qcom,cnss-peach/fs_ready 1
     insmod /vendor/lib/modules/qca_cld3_peach_v2.ko
-    wait /sys/class/net/wlan0 15
+    setprop twrp.wifi.driver.loaded true
+
+on property:twrp.firmware.mounted=true && property:ro.twrp.wlan_chip=kiwi_v2
+    chmod 0222 /sys/devices/platform/soc/b0000000.qcom,cnss-kiwi/fs_ready
+    write /sys/devices/platform/soc/b0000000.qcom,cnss-kiwi/fs_ready 1
+    insmod /vendor/lib/modules/qca_cld3_kiwi_v2.ko
+    setprop twrp.wifi.driver.loaded true
+
+# The interface only appears once the firmware download finishes, which is
+# right on ten seconds here, so a shorter timeout expired about as often as it
+# succeeded and wpa_supplicant started against nothing and exited.
+on property:twrp.wifi.driver.loaded=true
+    wait /sys/class/net/wlan0 30
     setprop twrp.wifi.driver.ready true
 
 on property:twrp.wifi.driver.ready=true
