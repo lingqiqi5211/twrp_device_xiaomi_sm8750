@@ -1,4 +1,5 @@
-service odm.weaver-service /odm/bin/hw/android.hardware.weaver-service
+service odm.weaver-service /system/bin/hal-launch.sh /odm/bin/hw/android.hardware.weaver-service
+    disabled
     class hal
     user root
     group root drmrpc

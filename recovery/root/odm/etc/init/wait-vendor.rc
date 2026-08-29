@@ -1,4 +1,4 @@
-service odm.prepdecrypt /system/bin/prepdecrypt.sh
+service odm.wait-vendor /system/bin/wait-vendor.sh
     user root
     group root
     disabled

@@ -1,6 +1,6 @@
 # Started once qseecomd has registered its listeners; libqtigatekeeper reaches
 # its trustlet through QSEECom.
-service vendor.gatekeeper_default /vendor/bin/hw/android.hardware.gatekeeper-service-qti
+service vendor.gatekeeper_default /system/bin/hal-launch.sh /vendor/bin/hw/android.hardware.gatekeeper-service-qti
     disabled
     class early_hal
     user root
