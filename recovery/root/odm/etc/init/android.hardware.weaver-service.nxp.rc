@@ -1,0 +1,13 @@
+# The NXP variant of the same IWeaver/default that odm.weaver-service provides
+# for Thales devices. Only one of them may run: init starts whichever
+# ro.twrp.weaver names, because the second to register replaces the first.
+#
+# The stock rc runs this as vendor_nxp_weaver, a user recovery does not have.
+service odm.weaver_nxp /system/bin/hal-launch.sh /odm/bin/hw/android.hardware.weaver-service.nxp-qti
+    disabled
+    class hal
+    user root
+    group root drmrpc nfc
+    capabilities WAKE_ALARM
+    setenv LD_LIBRARY_PATH /vendor/lib64:/vendor/lib64/hw:/odm/lib64:/system/lib64:/sbin
+    seclabel u:r:recovery:s0
