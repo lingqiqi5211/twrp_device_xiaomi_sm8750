@@ -1,0 +1,5 @@
+libcxx.so is a copy of the one under /vendor/lib64, kept where no mount can
+hide it. The stock vendor partition does not carry libcxx.so at all, and it is
+mounted over the ramdisk's /vendor for the first seconds of every boot, so
+qseecomd, ssgtzd and the boot control HAL -- which start in that window and do
+not go through hal-launch.sh -- would find no libcxx.so anywhere.

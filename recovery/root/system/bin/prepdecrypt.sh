@@ -1,4 +1,4 @@
-#!/sbin/sh
+#!/system/bin/sh
 
 # The below variables shouldn't need to be changed
 # unless you want to call the script something else

@@ -30,6 +30,10 @@ import /init.recovery.wifi.rc
 on init
     start vendor.boot-qti
     setprop prepdecrypt.setpatch true
+    start odm.wait-vendor
+
+on property:ro.boot.hardware.sku=piano
+    setprop persist.twrp.rotation 270
 
 on early-fs
     write /proc/sys/walt/sched_lib_name "recovery,magiskboot,Updater,updater,update_engine_sideload"
@@ -43,6 +47,10 @@ on fs
     chown system drmrpc /dev/qseecom
     chmod 0664 /dev/ion
     chown system system /dev/ion
+    wait /dev/block/bootdevice/by-name/modem${ro.boot.slot_suffix} 10
+    mkdir /firmware 0755 root system
+    mount vfat /dev/block/bootdevice/by-name/modem${ro.boot.slot_suffix} /firmware ro
+
     # Its SSD listener opens by-name/ssd, which ueventd may not have made yet.
     wait /dev/block/bootdevice/by-name/ssd 10
     start vendor.qseecomd
@@ -61,23 +69,45 @@ on boot
 # qseecomd is up, so the HALs that reach a trustlet through it can follow.
 on property:vendor.sys.listeners.registered=true
     start vendor.gatekeeper_default
+
+# The eSE HAL asks the element for its vendor id before it can open the TA,
+# and nxp_nci is one of the vendor modules: started any earlier it logs
+# "eseGetVendorId: Unknown eSE HW" and exits.
+on property:vendor.sys.listeners.registered=true && property:twrp.modules.loaded=true
     start vendor.secure_element
 
-# variant-script has copied this SKU's files into /odm.
-on property:twrp.variant.files_copied=1
+# The haptics driver is one of the vendor modules, so the HAL has nothing to
+# talk to until they are in. lsmod on warsaw shows qcom_hv_haptics loaded from
+# vendor_dlkm.
+on property:twrp.variant.files_copied=1 && property:twrp.modules.loaded=true
     start odm.vibratorfeature-service
+
+on property:twrp.variant.files_copied=1
     start odm.touch_report
+
+# One weaver per device, and exactly one VINTF declaration for it.
+#
+# Both vendors' services provide IWeaver/default @2, so the single fragment in
+# vendor/etc/vintf/manifest/android.hardware.weaver-service.xml covers whichever
+# one runs. Shipping a second fragment for the other vendor makes VINTF reject
+# the entire device manifest -- measured on warsaw: every HAL lookup then fails,
+# ISecureElement/eSE1 among them, and the device resets.
+#
+# Only one service may run either, since the second to register IWeaver/default
+# replaces the first. Starting the wrong vendor's is worse than starting none:
+# the Thales chain on a device whose element is NXP hard-resets recovery a few
+# seconds in. variant-script names the vendor in ro.twrp.weaver.
+on property:twrp.variant.files_copied=1 && property:ro.twrp.weaver=thales
     start odm.weaver-service
+
+on property:twrp.variant.files_copied=1 && property:ro.twrp.weaver=nxp
+    start odm.keymint-strongbox-nxp
+    start odm.weaver_nxp
 
 on property:twrp.modules.loaded=true
     # KeyMint stays down until this has pointed the version properties at the
     # installed system, so start it as early as the mapper nodes allow.
     start odm.prepdecrypt
-    # Keep the modem image mounted: qca_cld3_peach_v2 loads WLAN firmware
-    # from /vendor/firmware_mnt/image after the driver is inserted.
-    mkdir /vendor/firmware_mnt 0755 root shell
-    mount vfat /dev/block/bootdevice/by-name/modem${ro.boot.slot_suffix} /vendor/firmware_mnt ro,shortname=lower,uid=1000,gid=1000,dmask=227,fmask=337
-    mount none /vendor/firmware_mnt /firmware bind
     # Load ADSP firmware for PMIC
     wait /sys/kernel/boot_adsp/boot
     write /sys/kernel/boot_adsp/boot 1
@@ -87,3 +117,24 @@ on property:twrp.modules.loaded=true
     wait /sys/class/power_supply/battery
     start vendor.health-default
     setprop twrp.firmware.mounted true
+
+# The stock vendor partition is first-stage-mounted over the ramdisk's own
+# /vendor, and TWRP mounts it again for the partition list and leaves it there,
+# hiding our libraries, our HAL binaries and our trustlets all at once. Bind
+# them somewhere the stock partition cannot reach while they are still
+# visible; hal-launch.sh takes all three from here.
+on property:twrp.vendor.visible=1
+    mkdir /twrplib 0755 root root
+    mkdir /twrplib/vendor 0755 root root
+    mkdir /twrplib/vendorhw 0755 root root
+    mkdir /twrplib/vendorbin 0755 root root
+    mkdir /twrplib/odm 0755 root root
+    mkdir /twrplib/odmbin 0755 root root
+    mount none /vendor/lib64 /twrplib/vendor bind
+    mount none /vendor/lib64/hw /twrplib/vendorhw bind
+    mount none /vendor/bin/hw /twrplib/vendorbin bind
+    mount none /odm/lib64 /twrplib/odm bind
+    mount none /odm/bin/hw /twrplib/odmbin bind
+    mount none /firmware /vendor/firmware_mnt bind
+    write /twrplib/.staged 1
+    setprop twrp.libs.staged 1
