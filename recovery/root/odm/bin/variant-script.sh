@@ -47,7 +47,6 @@ set_vibrator_props() {
 #-------------------------------------------------
 case "$variant" in
 "dada")
-    resetprop ro.twrp.weaver "thales"
     resetprop ro.twrp.wlan_chip "peach_v2"
     model="$base_name"
     resetprop ro.twrp.device_version "Xiaomi_15"
@@ -58,7 +57,6 @@ case "$variant" in
     ;;
 
 "haotian")
-    resetprop ro.twrp.weaver "thales"
     resetprop ro.twrp.wlan_chip "peach_v2"
     model="$base_name Pro"
     resetprop ro.twrp.device_version "Xiaomi_15_Pro"
@@ -71,7 +69,6 @@ case "$variant" in
     ;;
 
 "xuanyuan")
-    resetprop ro.twrp.weaver "thales"
     resetprop ro.twrp.wlan_chip "peach_v2"
     model="$base_name Ultra"
     resetprop ro.twrp.device_version "Xiaomi_15_Ultra"
@@ -82,7 +79,6 @@ case "$variant" in
     ;;
 
 "warsaw")
-    resetprop ro.twrp.weaver "nxp"
     resetprop ro.twrp.wlan_chip "kiwi_v2"
     model="REDMI K90 Ultra"
     resetprop ro.twrp.device_version "REDMI_K90_Ultra"
@@ -93,7 +89,6 @@ case "$variant" in
     ;;
 
 "annibale")
-    resetprop ro.twrp.weaver "nxp"
     resetprop ro.twrp.wlan_chip "kiwi_v2"
     model="REDMI K90"
     resetprop ro.twrp.device_version "REDMI_K90"
@@ -102,7 +97,6 @@ case "$variant" in
     ;;
 
 "miro")
-    resetprop ro.twrp.weaver "nxp"
     model="REDMI K80 Pro"
     resetprop ro.twrp.device_version "REDMI_K80_Pro"
     resetprop ro.odm.mm.vibrator.lowPowerMode "true"
@@ -110,7 +104,6 @@ case "$variant" in
     ;;
 
 "piano")
-    resetprop ro.twrp.weaver "thales"
     resetprop ro.twrp.wlan_chip "peach_v2"
     model="Xiaomi Pad 8 Pro"
     resetprop ro.twrp.device_version "Xiaomi_Pad_8_Pro"
