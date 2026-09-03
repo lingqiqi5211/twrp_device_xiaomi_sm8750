@@ -127,6 +127,10 @@ RECOVERY_BINARY_SOURCE_FILES += $(TARGET_OUT_EXECUTABLES)/debuggerd
 TARGET_RECOVERY_DEVICE_MODULES += strace
 RECOVERY_BINARY_SOURCE_FILES += $(TARGET_OUT_EXECUTABLES)/strace
 TARGET_RECOVERY_DEVICE_MODULES += prebuilt
+# TW_INCLUDE_WIFI only compiles the WLAN pages in; the daemon the pages talk to
+# is this module (external/wpa_supplicant_8, stem wpa_supplicant), and nothing
+# pulls it into the ramdisk unless it is named here.
+TARGET_RECOVERY_DEVICE_MODULES += wpa_supplicant_recovery wpa_cli_recovery
 
 # Fastbootd
 TW_INCLUDE_FASTBOOTD := true
