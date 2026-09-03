@@ -19,30 +19,19 @@ on early-boot
     write /sys/kernel/icnss/wpss_boot 1
     write /proc/sys/kernel/firmware_config/force_sysfs_fallback 1
 
-# One image serves the whole family, and the family has two WLAN chips: kiwi
-# (warsaw) and peach (the rest). variant-script reads the chip off the cnss
-# device-tree node and names it in ro.twrp.wlan_chip, so each branch below
-# fires only on the device that has that chip. The cnss chain itself
-# (cnss_prealloc .. cfg80211) is in TW_LOAD_VENDOR_MODULES and is up by the
-# time twrp.firmware.mounted is set.
-on property:twrp.firmware.mounted=true && property:ro.twrp.wlan_chip=peach_v2
-    chmod 0222 /sys/devices/platform/soc/b0000000.qcom,cnss-peach/fs_ready
-    write /sys/devices/platform/soc/b0000000.qcom,cnss-peach/fs_ready 1
-    insmod /vendor/lib/modules/qca_cld3_peach_v2.ko
-    setprop twrp.wifi.driver.loaded true
+# variant-script names the chip in ro.twrp.wlan_chip once its files are copied;
+# load-wlan-driver.sh fetches that chip's qca_cld3 module from the device's own
+# vendor_dlkm, sets fs_ready and inserts it.
+on property:twrp.firmware.mounted=true && property:twrp.variant.files_copied=1
+    start load-wlan-driver
 
-on property:twrp.firmware.mounted=true && property:ro.twrp.wlan_chip=kiwi_v2
-    chmod 0222 /sys/devices/platform/soc/b0000000.qcom,cnss-kiwi/fs_ready
-    write /sys/devices/platform/soc/b0000000.qcom,cnss-kiwi/fs_ready 1
-    insmod /vendor/lib/modules/qca_cld3_kiwi_v2.ko
-    setprop twrp.wifi.driver.loaded true
-
-# The interface only appears once the firmware download finishes, which is
-# right on ten seconds here, so a shorter timeout expired about as often as it
-# succeeded and wpa_supplicant started against nothing and exited.
+# The interface only appears once the firmware download finishes, about ten
+# seconds in. init's own wait command stops its whole command queue for that
+# long, and the ctl.start that prepdecrypt sends for KeyMint sits in that
+# queue; measured on piano, init stood still for 10234 ms. wait-wlan0.sh
+# polls in the background and raises twrp.wifi.driver.ready itself.
 on property:twrp.wifi.driver.loaded=true
-    wait /sys/class/net/wlan0 30
-    setprop twrp.wifi.driver.ready true
+    start wait-wlan0
 
 on property:twrp.wifi.driver.ready=true
     start wpa_supplicant
@@ -53,6 +42,16 @@ service wpa_supplicant /system/bin/wpa_supplicant -Dnl80211 -iwlan0 -c/system/et
     group root wifi inet net_admin
     capabilities NET_ADMIN NET_RAW
     disabled
+    seclabel u:r:recovery:s0
+
+service load-wlan-driver /system/bin/load-wlan-driver.sh
+    disabled
+    oneshot
+    seclabel u:r:recovery:s0
+
+service wait-wlan0 /system/bin/wait-wlan0.sh
+    disabled
+    oneshot
     seclabel u:r:recovery:s0
 
 service dhcpcd /system/bin/dhcpcd wlan0 -B
