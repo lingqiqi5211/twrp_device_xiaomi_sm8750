@@ -59,8 +59,15 @@ on fs
     start vendor.qseecomd
     mkdir /mnt/vendor 0775 shell system
     mkdir /mnt/vendor/persist 0775 shell system
-    mkdir /tmp/persist 0775 shell system
-    mount none /tmp/persist /mnt/vendor/persist bind rec
+    # TWRP keeps its settings in TW_PERSIST_DIR, which upstream moved to
+    # /mnt/vendor/persist/TWRP. A tmpfs there takes those writes and drops
+    # them at reboot, and the vibrator HAL reads its calibration off the
+    # same partition. TWRP unmounts its own mount points at startup, so the
+    # real partition goes to /persist and /mnt/vendor/persist is a bind of
+    # it: a separate mount entry TWRP never touches.
+    wait /dev/block/bootdevice/by-name/persist 10
+    mount ext4 /dev/block/bootdevice/by-name/persist /persist noatime nosuid nodev barrier=1
+    mount none /persist /mnt/vendor/persist bind
     install_keyring
 
 on post-fs
