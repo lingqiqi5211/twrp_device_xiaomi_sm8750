@@ -80,10 +80,13 @@ on boot
 on property:vendor.sys.listeners.registered=true
     start vendor.gatekeeper_default
 
-# The eSE HAL asks the element for its vendor id before it can open the TA,
-# and nxp_nci is one of the vendor modules: started any earlier it logs
-# "eseGetVendorId: Unknown eSE HW" and exits.
-on property:vendor.sys.listeners.registered=true && property:twrp.modules.loaded=true
+# The eSE HAL asks the element for its vendor id before it can open the TA, and
+# the health HAL reads the gauge off the PMIC: both answers come back through
+# the ADSP. nxp_nci is a vendor module as well, and wait-adsp only runs once the
+# modules are in, so this one trigger carries both preconditions. Started any
+# earlier the eSE HAL logs "eseGetVendorId: Unknown eSE HW" and exits.
+on property:twrp.adsp.ready=true && property:vendor.sys.listeners.registered=true
+    start vendor.health-default
     start vendor.secure_element
 
 # The haptics driver is one of the vendor modules, so the HAL has nothing to
@@ -124,8 +127,7 @@ on property:twrp.modules.loaded=true
     # This make USB-OTG work
     wait /sys/kernel/boot_adsp/ssr
     write /sys/kernel/boot_adsp/ssr 1
-    wait /sys/class/power_supply/battery
-    start vendor.health-default
+    start vendor.wait-adsp
     setprop twrp.firmware.mounted true
 
 # The stock vendor partition is first-stage-mounted over the ramdisk's own
@@ -148,3 +150,11 @@ on property:twrp.vendor.visible=1
     mount none /firmware /vendor/firmware_mnt bind
     write /twrplib/.staged 1
     setprop twrp.libs.staged 1
+
+service vendor.wait-adsp /system/bin/sh /system/bin/wait-adsp-ready.sh
+    class hal
+    user root
+    group root
+    disabled
+    oneshot
+    seclabel u:r:recovery:s0
