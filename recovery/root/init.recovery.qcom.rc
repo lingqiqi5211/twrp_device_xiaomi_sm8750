@@ -56,7 +56,6 @@ on fs
 
     # Its SSD listener opens by-name/ssd, which ueventd may not have made yet.
     wait /dev/block/bootdevice/by-name/ssd 10
-    start vendor.qseecomd
     mkdir /mnt/vendor 0775 shell system
     mkdir /mnt/vendor/persist 0775 shell system
     # TWRP keeps its settings in TW_PERSIST_DIR, which upstream moved to
@@ -69,6 +68,7 @@ on fs
     mount ext4 /dev/block/bootdevice/by-name/persist /persist noatime nosuid nodev barrier=1
     mount none /persist /mnt/vendor/persist bind
     install_keyring
+    start vendor.qseecomd
 
 on post-fs
     start odm.variant-script
