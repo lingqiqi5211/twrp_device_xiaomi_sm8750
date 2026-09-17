@@ -1,0 +1,14 @@
+# Xiaomi's own weaver, the one piano keeps its slots in. It talks to the weaver
+# GP TA (8AAAF201-2460-0010-AABB-CCDD00000006) through libGPTEE_vendor.so and
+# never touches a secure element, which piano does not have.
+#
+# The stock rc runs it as system and declares two more interfaces on it,
+# miauthsecretd and oldcredential; neither is in the recovery manifest and
+# nothing here asks for them.
+service odm.weaver_mi /system/bin/hal-launch.sh /odm/bin/hw/android.hardware.weaver
+    disabled
+    class hal
+    user root
+    group root drmrpc
+    setenv LD_LIBRARY_PATH /vendor/lib64:/vendor/lib64/hw:/odm/lib64:/system/lib64:/sbin
+    seclabel u:r:recovery:s0

@@ -6,15 +6,19 @@ One image serves the whole family. `variant-script.sh` reads
 `ro.boot.hardware.sku` and sets the per-device properties from there; the
 WLAN chip is read from the kernel's cnss device tree node instead.
 
-| SKU | Device | eSE | WLAN |
+| SKU | Device | Weaver | WLAN |
 | --- | --- | --- | --- |
-| `dada` | Xiaomi 15 | Thales | peach_v2 |
-| `haotian` | Xiaomi 15 Pro | Thales | peach_v2 |
-| `xuanyuan` | Xiaomi 15 Ultra | Thales | peach_v2 |
-| `warsaw` | REDMI K90 Ultra | NXP | kiwi_v2 |
-| `annibale` | REDMI K90 / POCO F8 Pro | NXP | kiwi_v2 |
-| `miro` | REDMI K80 Pro / POCO F7 Ultra | NXP | detected |
-| `piano` | Xiaomi Pad 8 Pro | Thales | peach_v2 |
+| `dada` | Xiaomi 15 | Thales eSE | peach_v2 |
+| `haotian` | Xiaomi 15 Pro | Thales eSE | peach_v2 |
+| `xuanyuan` | Xiaomi 15 Ultra | Thales eSE | peach_v2 |
+| `warsaw` | REDMI K90 Ultra | NXP eSE | kiwi_v2 |
+| `annibale` | REDMI K90 / POCO F8 Pro | NXP eSE | kiwi_v2 |
+| `miro` | REDMI K80 Pro / POCO F7 Ultra | NXP eSE | detected |
+| `piano` | Xiaomi Pad 8 Pro | TEE (miweaver) | peach_v2 |
+
+`piano` has no secure element: no eSE node in its device tree, so the eSE HAL
+never finds one and nothing can reach an applet. Its weaver slots live in the
+TEE and Xiaomi's own `android.hardware.weaver` is the service that reads them.
 
 Tested on hardware: `warsaw`, `piano`.
 

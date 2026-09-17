@@ -85,8 +85,18 @@ on property:vendor.sys.listeners.registered=true
 # the ADSP. nxp_nci is a vendor module as well, and wait-adsp only runs once the
 # modules are in, so this one trigger carries both preconditions. Started any
 # earlier the eSE HAL logs "eseGetVendorId: Unknown eSE HW" and exits.
+#
+# The eSE part only goes to the SKUs that have one. The HAL looks for
+# /dev/nq-nci and /dev/st54spi_gpio and exits when it finds neither, which on
+# piano is every time -- that tablet has no eSE node in its device tree at all,
+# so the service respawned every five seconds and se_omapi waited on it forever.
 on property:twrp.adsp.ready=true && property:vendor.sys.listeners.registered=true
     start vendor.health-default
+
+on property:twrp.adsp.ready=true && property:vendor.sys.listeners.registered=true && property:ro.twrp.weaver=nxp
+    start vendor.secure_element
+
+on property:twrp.adsp.ready=true && property:vendor.sys.listeners.registered=true && property:ro.twrp.weaver=thales
     start vendor.secure_element
 
 # The haptics driver is one of the vendor modules, so the HAL has nothing to
@@ -116,6 +126,13 @@ on property:twrp.variant.files_copied=1 && property:ro.twrp.weaver=thales
 on property:twrp.variant.files_copied=1 && property:ro.twrp.weaver=nxp
     start odm.keymint-strongbox-nxp
     start odm.weaver_nxp
+
+# piano has no element, so neither eSE service can answer for it. Its slots are
+# in the weaver GP TA and Xiaomi's own service is what reads them: the Thales
+# one asked the TA too, as a "backup", but returned the applet's failure and
+# TWRP got nothing but "Failed to get weaver key size".
+on property:twrp.variant.files_copied=1 && property:ro.twrp.weaver=mi
+    start odm.weaver_mi
 
 on property:twrp.modules.loaded=true
     # KeyMint stays down until this has pointed the version properties at the

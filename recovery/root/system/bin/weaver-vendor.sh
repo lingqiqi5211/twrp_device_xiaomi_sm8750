@@ -14,8 +14,15 @@ case "$(getprop ro.boot.hardware.sku)" in
 warsaw | annibale | miro)
     vendor="nxp"
     ;;
-dada | haotian | xuanyuan | piano)
+dada | haotian | xuanyuan)
     vendor="thales"
+    ;;
+# piano is a tablet and has no secure element at all: no eSE node in its device
+# tree, so neither /dev/nq-nci nor /dev/st54spi_gpio ever appears and the eSE
+# HAL exits on "eseGetVendorId: Unknown eSE HW". Its weaver slots live in the
+# TEE and Xiaomi's own android.hardware.weaver is what reads them.
+piano)
+    vendor="mi"
     ;;
 esac
 
