@@ -100,7 +100,7 @@ case "$variant" in
     model="REDMI K80 Pro"
     resetprop ro.twrp.device_version "REDMI_K80_Pro"
     resetprop ro.odm.mm.vibrator.lowPowerMode "true"
-    set_vibrator_props "170" "35" "/sys/class/qcom-haptics"
+    set_vibrator_props "170" "20" "/sys/class/qcom-haptics"
     ;;
 
 "piano")
